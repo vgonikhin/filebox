@@ -14,7 +14,6 @@ public class Server {
             System.out.println("Awaiting connections");
             while (true){
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected");
                 ClientHandler ch = new ClientHandler(this, socket);
             }
         } catch (Exception e) {

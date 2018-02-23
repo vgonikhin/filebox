@@ -22,37 +22,53 @@ public class ClientHandler {
             this.socket = socket;
             this.soos = new ObjectOutputStream(socket.getOutputStream());
             this.sois = new ObjectInputStream(socket.getInputStream());
-            this.account = "client";
-            new Thread(new Runnable(){
-                public void run () {
-                    try {
+            new Thread(() -> {
+                try {
+                    while (true) {
                         Object ro = sois.readObject();
-                        if(ro instanceof AbstractMessage){
-                            if(ro instanceof FileMessage){
-                                FileMessage fm = (FileMessage)ro;
-                                Files.write(Paths.get("server/repository/"+account+"/"+fm.getFilename()),fm.getData(), StandardOpenOption.CREATE);
+                        if (ro instanceof AuthMessage) {
+                            AuthMessage am = (AuthMessage)ro;
+                            if(am.getLogin().equals("client")&&am.getPassword().equals("password")){
+                                this.account = "client";
+                                soos.writeObject(new CommandMessage(CommandMessage.CM_AUTH_RIGHT));
+                                System.out.println("Client connected");
+                                break;
+                            } else {
+                                soos.writeObject(new CommandMessage(CommandMessage.CM_AUTH_WRONG));
+                                break;
                             }
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        try {
-                            socket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            sois.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            soos.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                    }
+                    while (true) {
+                        Object ro = sois.readObject();
+                        if (ro instanceof AbstractMessage) {
+                            if (ro instanceof FileMessage) {
+                                FileMessage fm = (FileMessage) ro;
+                                Files.write(Paths.get("server/repository/" + account + "/" + fm.getFilename()), fm.getData(), StandardOpenOption.CREATE);
+                                System.out.println("File received");
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        sois.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        soos.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
+
             }).start();
         } catch (IOException e){
             e.printStackTrace();
